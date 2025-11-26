@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>STEA RETRO EMULADOR</title>
+  <style>
+    body {
+      background-color: black;
+      color: lime;
+      font-family: monospace;
+      font-size: 18px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .box {
+      border: 2px solid lime;
+      padding: 20px;
+      width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .title {
+      text-align: center;
+      font-weight: bold;
+    }
+    .line {
+      border-top: 1px solid lime;
+      margin: 10px 0;
+    }
+    .game {
+      display: flex;
+      align-items: center;
+      padding: 5px;
+      gap: 10px;
+    }
+    .game img {
+      width: 64px;
+      height: 48px;
+      object-fit: cover;
+      border: 1px solid lime;
+    }
+    .game span {
+      white-space: nowrap;
+    }
+    .selected {
+      background-color: lime;
+      color: black;
+    }
+    .footer {
+      margin-top: 2em;
+      text-align: center;
+    }
+    iframe {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      border: none;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+<div class="box" id="menu">
+  <div class="title">SELECTOR GAME</div>
+  <div class="line"></div>
+  <div id="games"></div>
+  <div class="footer">
+  </div>
+</div>
+
+<script>
+  const games = [
+    { name: "[ Super Mario (SMB1) ]", link: "https://arcade.makecode.com/S62581-99642-83398-81272", thumbnail: "" },
+    { name: "[ Donkey Kong ]", link: "https://arcade.makecode.com/S05694-09696-08189-85429", thumbnail: "" },
+    { name: "[ DOOM - FPS ]", link: "https://arcade.makecode.com/S66098-93974-03024-47442", thumbnail: " },
+    { name: "[ Pokemon Red Green ]", link: "https://arcade.makecode.com/S80763-23759-48113-67271", thumbnail: "" },
+    { name: "[ Friday night funkin ]", link: "https://makecode.com/_Tbcgk3ER60Vu", thumbnail: "" },
+    { name: "[ Among US ]", link: "https://arcade.makecode.com/37253-30932-98966-25566", thumbnail: "" },
+    { name: "[ Stream - Puzzle ]", link : "https://arcade.makecode.com/37122-13977-99601-13980", thumbnail: ""}
+  ];
+
+  const gameContainer = document.getElementById("games");
+  let selected = 0;
+
+  // Criar lista de jogos
+  games.forEach((game, i) => {
+    const div = document.createElement("div");
+    div.className = "game" + (i === selected ? " selected" : "");
+
+    const img = document.createElement("img");
+    img.src = game.thumbnail;
+    img.alt = game.name;
+
+    const name = document.createElement("span");
+    name.textContent = (i === selected ? "> " : "  ") + game.name;
+
+    div.appendChild(img);
+    div.appendChild(name);
+    gameContainer.appendChild(div);
+  });
+
+  function updateSelection() {
+    const all = document.querySelectorAll(".game");
+    all.forEach((el, i) => {
+      el.classList.toggle("selected", i === selected);
+      const span = el.querySelector("span");
+      if (span) {
+        span.textContent = (i === selected ? "> " : "  ") + games[i].name;
+      }
+    });
+  }
+
+  // Navegação por teclado
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp") {
+      selected = (selected - 1 + games.length) % games.length;
+      updateSelection();
+    } else if (e.key === "ArrowDown") {
+      selected = (selected + 1) % games.length;
+      updateSelection();
+    } else if (e.key.toLowerCase() === "x" || e.key === "Enter") {
+      launchFullscreenGame(games[selected].link);
+    }
+  });
+
+  // Gamepad
+  let lastMove = 0;
+  function pollGamepad() {
+    const gamepads = navigator.getGamepads();
+    if (!gamepads[0]) return;
+
+    const gp = gamepads[0];
+    const now = Date.now();
+
+    if ((gp.buttons[12]?.pressed || gp.axes[1] < -0.5) && now - lastMove > 200) {
+      selected = (selected - 1 + games.length) % games.length;
+      updateSelection();
+      lastMove = now;
+    } else if ((gp.buttons[13]?.pressed || gp.axes[1] > 0.5) && now - lastMove > 200) {
+      selected = (selected + 1) % games.length;
+      updateSelection();
+      lastMove = now;
+    }
+
+    if (gp.buttons[3]?.pressed) {
+      launchFullscreenGame(games[selected].link);
+    }
+  }
+
+  setInterval(pollGamepad, 100);
+
+  function launchFullscreenGame(url) {
+    document.body.innerHTML = ""; // Limpa tela do menu
+
+    const iframe = document.createElement("iframe");
+    iframe.src = url;
+    iframe.allowFullscreen = true;
+    document.body.appendChild(iframe);
+
+    // Tentar fullscreen automático
+    setTimeout(() => {
+      if (iframe.requestFullscreen) {
+        iframe.requestFullscreen();
+      } else if (iframe.webkitRequestFullscreen) {
+        iframe.webkitRequestFullscreen();
+      } else if (iframe.mozRequestFullScreen) {
+        iframe.mozRequestFullScreen();
+      } else if (iframe.msRequestFullscreen) {
+        iframe.msRequestFullscreen();
+      }
+    }, 100);
+  }
+</script>
+</body>
+</html>
